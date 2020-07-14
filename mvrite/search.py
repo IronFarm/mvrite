@@ -5,16 +5,29 @@ from lxml import html
 
 
 class ResultList:
-    def __init__(self, outcode, n_bedrooms):
-        self.outcode = outcode
-        self.n_bedrooms = n_bedrooms
+    def __init__(self, location_id, min_bedrooms, max_bedrooms):
+        self.location_id = location_id
+        self.min_bedrooms = min_bedrooms
+        self.max_bedrooms = max_bedrooms
+
+    @property
+    def search_parameters(self):
+        return {
+            'locationIdentifier': self.location_id,
+            'minBedrooms': str(self.min_bedrooms),
+            'maxBedrooms': str(self.max_bedrooms),
+            'sortType': '6',
+            'propertyTypes': 'detached,semi-detached,terraced',
+            'primaryDisplayPropertyType': 'houses'
+        }
 
     @property
     def url(self):
-        return f'https://www.rightmove.co.uk/property-for-sale/{self.outcode}/{self.n_bedrooms}-bed-houses.html'
+        return f'https://www.rightmove.co.uk/property-for-sale/find.html'
 
     def get_html(self):
-        response = requests.get(self.url)
+        # Fetch page one
+        response = requests.get(self.url, self.search_parameters)
 
         if response.ok:
             return response.text
@@ -42,16 +55,18 @@ class ResultList:
             status_date = status_data[2]
             status_date = datetime.datetime.strptime(status_date, '%d/%m/%Y').date()
         except IndexError:
-            if status_data[1] != 'yesterday':
-                raise
-            else:
+            if status_data[1] == 'today':
+                status_date = datetime.date.today()
+            elif status_data[1] == 'yesterday':
                 status_date = datetime.date.today() - datetime.timedelta(days=1)
+            else:
+                raise ValueError('Can\'t parse time from listing status "{}"'.format(' '.join(status_data)))
 
         return id_, status_keyword, status_date
 
 
 def main():
-    results = ResultList('SE6', 3)
+    results = ResultList('OUTCODE^2333', 3, 5)
     print(results.url)
     results.parse_results()
 
