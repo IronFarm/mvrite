@@ -1,7 +1,12 @@
 import datetime
+import time
 
 import requests
 from lxml import html
+
+
+class NoMoreResultsException(BaseException):
+    pass
 
 
 class ResultList:
@@ -14,9 +19,9 @@ class ResultList:
     def search_parameters(self):
         return {
             'locationIdentifier': self.location_id,
-            'minBedrooms': str(self.min_bedrooms),
-            'maxBedrooms': str(self.max_bedrooms),
-            'sortType': '6',
+            'minBedrooms': self.min_bedrooms,
+            'maxBedrooms': self.max_bedrooms,
+            'sortType': 6,
             'propertyTypes': 'detached,semi-detached,terraced',
             'primaryDisplayPropertyType': 'houses'
         }
@@ -25,27 +30,60 @@ class ResultList:
     def url(self):
         return f'https://www.rightmove.co.uk/property-for-sale/find.html'
 
-    def get_html(self):
-        # Fetch page one
-        response = requests.get(self.url, self.search_parameters)
+    def page_through_results(self):
+        """
+        Yields search results HTML page by page
 
-        if response.ok:
-            return response.text
-        else:
-            raise requests.HTTPError()
+        :return:
+        """
+
+        page = 0
+
+        with requests.Session() as session:
+            while True:
+                # Fetch page
+                response = session.get(self.url, params=dict(index=24 * page, **self.search_parameters))
+
+                if response.ok:
+                    yield response.text
+                else:
+                    raise requests.HTTPError()
+
+                page += 1
+                time.sleep(10)
+
+                if page >= 10:
+                    raise ValueError('Too many pages')
 
     def parse_results(self):
-        body = self.get_html()
-        root = html.document_fromstring(body)
+        """
+        Go through results pages, parsing property elements until there are no more
 
-        for el in root.find_class('l-searchResult'):
-            print(self.get_element_details(el))
+        :return:
+        """
 
-        return
+        for body in self.page_through_results():
+            root = html.document_fromstring(body)
+
+            for el in root.find_class('l-searchResult'):
+                try:
+                    print(self.get_element_details(el))
+                except NoMoreResultsException:
+                    return
 
     def get_element_details(self, el):
+        """
+        Extract the ID and update information from a property element
+
+        :param el:
+        :return:
+        """
+
         # Get ID
         id_ = int(el.attrib['id'].replace('property-', ''))
+
+        if id_ == 0:
+            raise NoMoreResultsException()
 
         # Get latest status
         status_data = el.find_class('propertyCard-branchSummary-addedOrReduced')[0].text.split()
@@ -67,7 +105,6 @@ class ResultList:
 
 def main():
     results = ResultList('OUTCODE^2333', 3, 5)
-    print(results.url)
     results.parse_results()
 
 
