@@ -10,8 +10,9 @@ if not _read:
 
 
 def get_logger(name):
-    if not os.path.exists('logs'):
-        os.mkdir('logs')
+    dir_name = os.path.join(os.path.dirname(__file__), 'logs')
+    if not os.path.exists(dir_name):
+        os.mkdir(dir_name)
 
     file_name = '{name}_{date}.log'.format(name=name, date=datetime.date.today())
     file_path = os.path.join('logs', file_name)
