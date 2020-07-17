@@ -3,7 +3,7 @@ Retrieve messages from the processing queue then scrape their details and add th
 """
 import mariadb
 
-from mvrite import config, get_logger, listing, queue
+from mvrite import config, get_logger, listing, pipe
 
 logger = get_logger('record')
 
@@ -31,7 +31,7 @@ def scrape_listing_and_log(prototype: listing.ListingPrototype):
 def main():
     logger.info('Fetching message from queue')
 
-    result_queue = queue.ListingQueue()
+    result_queue = pipe.ListingQueue()
     method, _, message = result_queue.fetch_message()
 
     logger.info('Received message "%s"', message)

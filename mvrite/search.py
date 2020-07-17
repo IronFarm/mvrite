@@ -4,7 +4,7 @@ import time
 import requests
 from lxml import html
 
-from mvrite import get_logger, listing, queue
+from mvrite import get_logger, listing, pipe
 
 
 class NoMoreResultsException(BaseException):
@@ -87,7 +87,7 @@ class ResultList:
         :return:
         """
 
-        result_queue = queue.ListingQueue()
+        result_queue = pipe.ListingQueue()
 
         for body in self.page_through_results():
             root = html.document_fromstring(body)
