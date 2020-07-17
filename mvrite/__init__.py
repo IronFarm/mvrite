@@ -15,7 +15,7 @@ def get_logger(name):
         os.mkdir(dir_name)
 
     file_name = '{name}_{date}.log'.format(name=name, date=datetime.date.today())
-    file_path = os.path.join('logs', file_name)
+    file_path = os.path.join(dir_name, file_name)
 
     log_file_handler = logging.FileHandler(file_path, 'a')
     log_file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
