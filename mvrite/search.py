@@ -4,8 +4,17 @@ import time
 import requests
 from lxml import html
 
+from mvrite import get_logger
+
 
 class NoMoreResultsException(BaseException):
+    """
+    Exception thrown when a search results page contains no more valid results
+    """
+    pass
+
+
+class DateParseError(BaseException):
     pass
 
 
@@ -14,6 +23,10 @@ class ResultList:
         self.location_id = location_id
         self.min_bedrooms = min_bedrooms
         self.max_bedrooms = max_bedrooms
+
+        # Initialise logging
+        self.logger = get_logger(type(self).__name__)
+        self.logger.info('Search prepared for %s', str(self))
 
     @property
     def search_parameters(self):
@@ -42,6 +55,7 @@ class ResultList:
         with requests.Session() as session:
             while True:
                 # Fetch page
+                self.logger.info('Retrieving results page %s', page + 1)
                 response = session.get(self.url, params=dict(index=24 * page, **self.search_parameters))
 
                 if response.ok:
@@ -53,7 +67,9 @@ class ResultList:
                 time.sleep(10)
 
                 if page >= 10:
-                    raise ValueError('Too many pages')
+                    self.logger.error('Aborting after 10 pages')
+
+                    return
 
     def parse_results(self):
         """
@@ -65,11 +81,19 @@ class ResultList:
         for body in self.page_through_results():
             root = html.document_fromstring(body)
 
-            for el in root.find_class('l-searchResult'):
+            property_elements = root.find_class('l-searchResult')
+            self.logger.info('Page has %s result elements', len(property_elements))
+
+            for el in property_elements:
                 try:
                     print(self.get_element_details(el))
                 except NoMoreResultsException:
+                    # Page has no more results so return
                     return
+                except DateParseError as e:
+                    # Log issue and skip to next element
+                    self.logger.exception(e)
+                    continue
 
     def get_element_details(self, el):
         """
@@ -98,9 +122,14 @@ class ResultList:
             elif status_data[1] == 'yesterday':
                 status_date = datetime.date.today() - datetime.timedelta(days=1)
             else:
-                raise ValueError('Can\'t parse time from listing status "{}"'.format(' '.join(status_data)))
+                raise DateParseError('Can\'t parse date from listing status "{}"'.format(' '.join(status_data)))
 
         return id_, status_keyword, status_date
+
+    def __str__(self):
+        return '<Location: {!r}\tMin. Bedrooms: {}\tMax. Bedrooms: {}>'.format(
+            self.location_id, self.min_bedrooms, self.max_bedrooms
+        )
 
 
 def main():
@@ -109,4 +138,6 @@ def main():
 
 
 if __name__ == '__main__':
+    import logging
+    logging.basicConfig(level=logging.INFO)
     main()
