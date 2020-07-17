@@ -5,7 +5,7 @@ import mariadb
 
 from mvrite import config, get_logger, listing, queue
 
-logger = get_logger(__name__)
+logger = get_logger('record')
 
 
 def get_connection():
