@@ -1,4 +1,5 @@
 import datetime
+import json
 
 
 class ListingPrototype:
@@ -9,3 +10,6 @@ class ListingPrototype:
 
     def __str__(self):
         return '<ID: {}, Status Date: {}, Status Keyword: {!r}>'.format(self.id, self.status_date, self.status_keyword)
+
+    def serialize(self):
+        return json.dumps({'id': self.id, 'status_date': str(self.status_date), 'status_keyword': self.status_keyword})

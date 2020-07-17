@@ -4,7 +4,7 @@ import time
 import requests
 from lxml import html
 
-from mvrite import get_logger, listing
+from mvrite import get_logger, listing, queue
 
 
 class NoMoreResultsException(BaseException):
@@ -78,6 +78,8 @@ class ResultList:
         :return:
         """
 
+        result_queue = queue.ListingQueue()
+
         for body in self.page_through_results():
             root = html.document_fromstring(body)
 
@@ -86,7 +88,8 @@ class ResultList:
 
             for el in property_elements:
                 try:
-                    print(self.get_element_details(el))
+                    listing = self.get_element_details(el)
+                    result_queue.publish_message(listing.serialize())
                 except NoMoreResultsException:
                     # Page has no more results so return
                     return
