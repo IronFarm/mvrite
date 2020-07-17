@@ -4,7 +4,7 @@ import time
 import requests
 from lxml import html
 
-from mvrite import get_logger
+from mvrite import get_logger, listing
 
 
 class NoMoreResultsException(BaseException):
@@ -124,10 +124,10 @@ class ResultList:
             else:
                 raise DateParseError('Can\'t parse date from listing status "{}"'.format(' '.join(status_data)))
 
-        return id_, status_keyword, status_date
+        return listing.ListingPrototype(id_, status_date, status_keyword)
 
     def __str__(self):
-        return '<Location: {!r}\tMin. Bedrooms: {}\tMax. Bedrooms: {}>'.format(
+        return '<Location: {!r}, Min. Bedrooms: {}, Max. Bedrooms: {}>'.format(
             self.location_id, self.min_bedrooms, self.max_bedrooms
         )
 
