@@ -19,6 +19,13 @@ class DateParseError(BaseException):
 
 
 class ResultList:
+    headers = {
+        'user-agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) '
+        'Chrome/81.0.4044.122 Safari/537.36'
+    }
+
     def __init__(self, location_id, min_bedrooms, max_bedrooms):
         self.location_id = location_id
         self.min_bedrooms = min_bedrooms
@@ -53,12 +60,7 @@ class ResultList:
         page = 0
 
         with requests.Session() as session:
-            session.headers.update({
-                'user-agent': \
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                    'AppleWebKit/537.36 (KHTML, like Gecko) '
-                    'Chrome/81.0.4044.122 Safari/537.36'
-            })
+            session.headers.update(self.headers)
 
             while True:
                 # Fetch page
