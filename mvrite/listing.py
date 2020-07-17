@@ -13,3 +13,9 @@ class ListingPrototype:
 
     def serialize(self):
         return json.dumps({'id': self.id, 'status_date': str(self.status_date), 'status_keyword': self.status_keyword})
+
+    @classmethod
+    def deserialize(cls, body):
+        body = json.loads(body)
+
+        return cls(body['id'], datetime.date.fromisoformat(body['status_date']), body['status_keyword'])

@@ -53,6 +53,13 @@ class ResultList:
         page = 0
 
         with requests.Session() as session:
+            session.headers.update({
+                'user-agent': \
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                    'AppleWebKit/537.36 (KHTML, like Gecko) '
+                    'Chrome/81.0.4044.122 Safari/537.36'
+            })
+
             while True:
                 # Fetch page
                 self.logger.info('Retrieving results page %s', page + 1)
