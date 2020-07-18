@@ -8,6 +8,10 @@ from mvrite import config, get_logger, listing, pipe
 logger = get_logger('record')
 
 
+class NoMoreMessagesException(Exception):
+    pass
+
+
 def get_connection():
     return mariadb.connect(**config['DB'])
 
@@ -28,7 +32,7 @@ def scrape_listing_and_log(prototype: listing.ListingPrototype):
         )
 
 
-def main():
+def process_record():
     logger.info('Fetching message from queue')
 
     result_queue = pipe.ListingQueue()
@@ -37,7 +41,8 @@ def main():
     logger.info('Received message "%s"', message)
     if message is None:
         logger.info('Empty message, no new data available')
-        return
+        
+        raise NoMoreMessagesException
 
     logger.info('Deserializing message')
     listing_proto = listing.ListingPrototype.deserialize(message)
@@ -58,14 +63,35 @@ def main():
 
     if not results:
         logger.info('Listing not in history table')
+        return_val = True
+
         try:
             scrape_listing_and_log(listing_proto)
         except Exception:
             logger.exception('Failed to log result to DB')
     else:
         logger.info('Listing in history table')
+        return_val = False
 
+    logger.info('Acknowledging message processing')
     result_queue.acknowledge_message(method.delivery_tag)
+
+    return return_val
+
+
+def main():
+    while True:
+        try:
+            record_processed = process_record()
+        except NoMoreMessagesException:
+            # No more messages so exit
+            return
+
+        # Something logged so exit
+        if record_processed:
+            return
+
+        logger.info('No record processed, requesting new record')
 
 
 if __name__ == '__main__':
