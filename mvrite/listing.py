@@ -5,7 +5,7 @@ import urllib.parse
 import requests
 from lxml import html
 
-from mvrite import search
+from mvrite import get_logger, search
 
 
 class ListingPrototype:
@@ -29,6 +29,8 @@ class ListingPrototype:
 
 class Listing:
     _url_template = 'https://www.rightmove.co.uk/property-for-sale/property-{id}.html'
+
+    logger = get_logger('Listing')
 
     def __init__(
         self, id_, title, location_string, estate_agent,
@@ -63,8 +65,14 @@ class Listing:
         # Date and status data
         date_added_string = root.get_element_by_id('firstListedDateValue').text
         date_added = datetime.datetime.strptime(date_added_string, '%d %B %Y').date()
-        price_string = root.get_element_by_id('propertyHeaderPrice').find('strong').text
-        price = int(price_string.strip().replace('£', '').replace(',', ''))
+        price_raw = root.get_element_by_id('propertyHeaderPrice').find('strong').text
+        price_clean = price_raw.strip().replace('£', '').replace(',', '')
+        try:
+            price = int(price_clean)
+        except ValueError:
+            # Unparsable price
+            cls.logger.warning('Cannot parse price from string "%s"', price_clean)
+            price = None
 
         # Extract lat & long
         map_src = [el.attrib['src'] for el in image_elements if '/map/' in el.attrib['src']][0]
