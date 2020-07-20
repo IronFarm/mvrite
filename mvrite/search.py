@@ -148,6 +148,9 @@ def main():
     results = ResultList('OUTCODE^2333', 3, 5)
     results.parse_results()
 
+    results = ResultList('OUTCODE^2313', 3, 5)
+    results.parse_results()
+
 
 if __name__ == '__main__':
     import logging
