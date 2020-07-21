@@ -62,9 +62,15 @@ class Listing:
         # Get estate agent
         estate_agent = root.get_element_by_id('aboutBranchLink').find('strong').text
 
-        # Date and status data
-        date_added_string = root.get_element_by_id('firstListedDateValue').text
-        date_added = datetime.datetime.strptime(date_added_string, '%d %B %Y').date()
+        # Date added
+        try:
+            date_added_string = root.get_element_by_id('firstListedDateValue').text
+            date_added = datetime.datetime.strptime(date_added_string, '%d %B %Y').date()
+        except KeyError:
+            cls.logger.warning('No date string found')
+            date_added = None
+
+        # Price data
         price_raw = root.get_element_by_id('propertyHeaderPrice').find('strong').text
         price_clean = price_raw.strip().replace('£', '').replace(',', '')
         try:
